@@ -30,9 +30,9 @@ def labelSteps(datas):
 				while index <= stepR:
 					stepDiff = stepDiff + dataDiffs[index]
 					index += 1
-				print(stepDiff, stepR, stepL)
+				#print(stepDiff, stepR, stepL)
 				avgRate = stepDiff / (stepR - stepL + 1)
-				print(avgRate)
+				#print(avgRate)
 				LAMPStepFL = avgRate >= avgRate_LB
 			step = [stepL, stepR, LAMPStepFL]
 			listOfSteps.append(step)
@@ -40,19 +40,24 @@ def labelSteps(datas):
 	#print(listOfSteps)
 	stepDiff = 0
 	cp = 0
-	cp_flag = False
+	maxDiff = 0
+	stepWidth = 0
 	for step in listOfSteps:
 		if step[-1]:
 			index = step[0] - 1
-			# Capture the SL of first Ture step as Cp
-			if cp_flag == False:
+			stepWidth += step[1] - step[0] + 1
+			# Capture time for highest diff as Cp
+			if dataDiffs[index] >= maxDiff:
+				maxDiff = dataDiffs[index]
 				cp = index * 10 / 60 - 5
-				cp_flag = True
+
 			# Accumulate signal increase of all Ture step as Step Diff
 			while index <= step[1] + 1:
 				stepDiff = stepDiff + dataDiffs[index]
 				index += 1
-	return listOfSteps, round(stepDiff, 1), round(cp, 1)
+	avgRate = 0
+	if stepWidth != 0: avgRate = stepDiff/stepWidth
+	return listOfSteps, round(stepDiff, 1), round(cp, 1), round(stepWidth, 1), round(avgRate, 1), 
 
 def results_processing(datas):
 	volDiffs = np.zeros(5)

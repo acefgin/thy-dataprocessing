@@ -18,6 +18,7 @@ def csvPlotter(folderPath, filename):
 	plt.rc('font', **font)
 
 	x = []
+	signalList = []
 	y1 = []
 	y2 = []
 	y3 = []
@@ -25,6 +26,7 @@ def csvPlotter(folderPath, filename):
 	y5 = []
 
 	rlt = []
+	idInfo = []
 	OverallResult = []
 	ChResult = []
 
@@ -34,6 +36,7 @@ def csvPlotter(folderPath, filename):
 
 		for row in plots:
 			if idx == 1:
+				idInfo.append([row[0], row[2]])
 				OverallResult.append(row[4])
 			if idx == 8:
 				x = row[7:]
@@ -43,62 +46,51 @@ def csvPlotter(folderPath, filename):
 				y1 = row[7:]
 				rlt.append(row[6])
 				y1 = np.array([float(i) for i in y1])
-				if len(y1) >= 9: y1 = smooth(y1)
+				if len(y1) >= 9: signalList.append(smooth(y1))
 			if idx == 12:
 				ChResult.append(row[5])
 				y2 = row[7:]
 				rlt.append(row[6])
 				y2 = np.array([float(i) for i in y2])
-				if len(y2) >= 9: y2 = smooth(y2)
+				if len(y2) >= 9: signalList.append(smooth(y2))
 			if idx == 13:
 				ChResult.append(row[5])
 				y3 = row[7:]
 				rlt.append(row[6])
 				y3 = np.array([float(i) for i in y3])
-				if len(y3) >= 9: y3 = smooth(y3)
+				if len(y3) >= 9: signalList.append(smooth(y3))
 			if idx == 14:
 				ChResult.append(row[5])
 				y4 = row[7:]
 				rlt.append(row[6])
 				y4 = np.array([float(i) for i in y4])
-				if len(y4) >= 9: y4 = smooth(y4)
+				if len(y4) >= 9: signalList.append(smooth(y4))
 			if idx == 15:
 				ChResult.append(row[5])
 				y5 = row[7:]
 				rlt.append(row[6])
 				y5 = np.array([float(i) for i in y5])
-				if len(y5) >= 9: y5 = smooth(y5)
+				if len(y5) >= 9: signalList.append(smooth(y5))
 
 			idx += 1
 
-	y1_steps, y1_Diff, y1_cp = labelSteps(y1)
-	if y1_Diff == 0:
-		if len(y1) >= 50:
-			y1_Diff = round(consecutiveSum(np.diff(y1), 50), 1)
-	y2_steps, y2_Diff, y2_cp = labelSteps(y2)
-	if y2_Diff == 0:
-		if len(y2) >= 50:
-			y2_Diff = round(consecutiveSum(np.diff(y2), 50), 1)
-	y3_steps, y3_Diff, y3_cp = labelSteps(y3)
-	if y3_Diff == 0:
-		if len(y3) >= 50:
-			y3_Diff = round(consecutiveSum(np.diff(y3), 50), 1)
-	y4_steps, y4_Diff, y4_cp = labelSteps(y4)
-	if y4_Diff == 0:
-		if len(y4) >= 50:
-			y4_Diff = round(consecutiveSum(np.diff(y4), 50), 1)
-	y5_steps, y5_Diff, y5_cp = labelSteps(y5)
-	if y5_Diff == 0:
-		if len(y5) >= 50:
-			y5_Diff = round(consecutiveSum(np.diff(y5), 50), 1)
+	featList = np.zeros((5,4))
+
+	if len(signalList) != 0:
+
+		for i in range(5):
+			_, diff, cp, stepWidth, avgRate= labelSteps(signalList[i])
+			if diff == 0 and len(signalList[i]) >= 50:
+				diff = round(consecutiveSum(np.diff(signalList[i]), 50), 1)
+			featList[i] = [diff, cp, stepWidth, avgRate]
 
 	plt.figure(num=None, figsize=(24, 6), dpi=40)
 	ax = plt.subplot(111)
-	ax.plot(x, y1[4:-5], color = 'r', linewidth=2, label='PC')
-	ax.plot(x, y2[4:-5], color = '#35ff35', linewidth=2, label='N1')
-	ax.plot(x, y3[4:-5], color = '#3535ff', linewidth=2, label='N2')
-	ax.plot(x, y4[4:-5], color = '#35ffff', linewidth=2, label='M1')
-	ax.plot(x, y5[4:-5], color = '#ff35ff', linewidth=2, label='M2')
+	ax.plot(x, y1, color = 'r', linewidth=2, label='PC')
+	ax.plot(x, y2, color = '#35ff35', linewidth=2, label='N1')
+	ax.plot(x, y3, color = '#3535ff', linewidth=2, label='N2')
+	ax.plot(x, y4, color = '#35ffff', linewidth=2, label='M1')
+	ax.plot(x, y5, color = '#ff35ff', linewidth=2, label='M2')
 	plt.xlabel('Time (mins)', fontsize = 19, fontweight = 'bold')
 	plt.ylabel('Signal (mvs)', fontsize = 19, fontweight = 'bold')
 	plt.title('{}_{}'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult[0]), fontsize = 20, fontweight = 'bold')
@@ -108,9 +100,9 @@ def csvPlotter(folderPath, filename):
 	ax.legend(loc='lower right',  ncol=5)
 	# Print diffs data in plot
 	diffs_text = 'Diffs(mvs) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
-	(y1_Diff, y2_Diff, y3_Diff, y4_Diff, y5_Diff)
+	(featList[0][0], featList[1][0], featList[2][0], featList[3][0], featList[4][0])
 	Tqs_text = 'Tqs(mins) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
-	(y1_cp, y2_cp, y3_cp, y4_cp, y5_cp)
+	(featList[0][1], featList[1][1], featList[2][1], featList[3][1], featList[4][1])
 	plt.text(-2.5, 440, diffs_text)
 	plt.text(-2.5, 400, Tqs_text)
 
@@ -163,6 +155,8 @@ def csvPlotter(folderPath, filename):
 
 	#plt.tight_layout()
 	plt.savefig(os.path.join(folderPath, '{}_{}.png'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult[0])))
+	 
+	return idInfo, featList
 
 def fileSplitter(multitestPath, slgtestPath, filename, devicePrefix, savePath):
     headers = []
@@ -244,5 +238,20 @@ if __name__=='__main__':
 	fileSplitter(multitestPath, slgtestPath, filename, devicePrefix, savePath)
 
 	filenames = sorted(glob.glob(os.path.join(savePath, '*.csv')))
-	for filename in filenames:
-		csvPlotter(savePath, filename)
+	
+	reportcsvFile = os.path.join(savePath, '{}_report.csv'.format(resultFolder))
+	header = ["SampleID", "Barcode", "Well", "VolDiff", "Tq", "StepWidth", "AvgRate"]
+	with open(reportcsvFile,'w', newline = '') as reportCsv:
+		writer = csv.writer(reportCsv)
+		writer.writerow(header)
+
+		for filename in filenames:
+
+			idInfo, featList = csvPlotter(savePath, filename)
+			for i in range(5):
+				
+				data2Write = [idInfo[0][0], idInfo[0][1], str(i+1), str(featList[i][0]), \
+					str(featList[i][1]), str(featList[i][2]), str(featList[i][3])]
+				writer.writerow(data2Write)
+
+		writer.writerow('\n')
