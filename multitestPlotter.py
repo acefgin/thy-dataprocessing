@@ -27,8 +27,8 @@ def csvPlotter(folderPath, filename):
 
 	rlt = []
 	idInfo = []
-	OverallResult = []
 	ChResult = []
+	OverallResult = ""
 
 	with open(os.path.join(folderPath, filename),'r') as csvfile:
 		plots = csv.reader(csvfile, delimiter=',')
@@ -37,7 +37,7 @@ def csvPlotter(folderPath, filename):
 		for row in plots:
 			if idx == 1:
 				idInfo.append([row[0], row[2]])
-				OverallResult.append(row[4])
+				OverallResult = row[4]
 			if idx == 8:
 				x = row[7:]
 				x = [float(i)/1000/60 - 5 for i in x]
@@ -93,7 +93,7 @@ def csvPlotter(folderPath, filename):
 	ax.plot(x, y5, color = '#ff35ff', linewidth=2, label='M2')
 	plt.xlabel('Time (mins)', fontsize = 19, fontweight = 'bold')
 	plt.ylabel('Signal (mvs)', fontsize = 19, fontweight = 'bold')
-	plt.title('{}_{}'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult[0]), fontsize = 20, fontweight = 'bold')
+	plt.title('{}_{}'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult), fontsize = 20, fontweight = 'bold')
 	box = ax.get_position()
 	ax.set_position([box.x0*0.35, box.y0, box.width * 1.2, box.height])
 	ax.grid(linestyle = '-.')
@@ -154,9 +154,9 @@ def csvPlotter(folderPath, filename):
 	"""
 
 	#plt.tight_layout()
-	plt.savefig(os.path.join(folderPath, '{}_{}.png'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult[0])))
+	plt.savefig(os.path.join(folderPath, '{}_{}.png'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult)))
 	 
-	return idInfo, featList
+	return idInfo, OverallResult, featList
 
 def fileSplitter(multitestPath, slgtestPath, filename, devicePrefix, savePath):
     headers = []
@@ -240,17 +240,17 @@ if __name__=='__main__':
 	filenames = sorted(glob.glob(os.path.join(savePath, '*.csv')))
 	
 	reportcsvFile = os.path.join(savePath, '{}_report.csv'.format(resultFolder))
-	header = ["SampleID", "Barcode", "Well", "VolDiff", "Tq", "StepWidth", "AvgRate"]
+	header = ["SampleID", "Barcode", "Result", "Well", "VolDiff", "Tq", "StepWidth", "AvgRate"]
 	with open(reportcsvFile,'w', newline = '') as reportCsv:
 		writer = csv.writer(reportCsv)
 		writer.writerow(header)
 
 		for filename in filenames:
 
-			idInfo, featList = csvPlotter(savePath, filename)
+			idInfo, overallRlt, featList = csvPlotter(savePath, filename)
 			for i in range(5):
 				
-				data2Write = [idInfo[0][0], idInfo[0][1], str(i+1), str(featList[i][0]), \
+				data2Write = [idInfo[0][0], idInfo[0][1], overallRlt, str(i+1), str(featList[i][0]), \
 					str(featList[i][1]), str(featList[i][2]), str(featList[i][3])]
 				writer.writerow(data2Write)
 
