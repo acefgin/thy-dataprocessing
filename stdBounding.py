@@ -1,7 +1,7 @@
 import numpy as np
 import os, csv, glob
 
-def stdBounding(arr, multiplier = 60):
+def stdBounding(arr, multiplier = 80):
     evaInterval = 120 # secs
     samplingPeriod = 10 # 10 secs/sample
     gapPeriod = 360 # secs
@@ -20,8 +20,8 @@ def stdBounding(arr, multiplier = 60):
         cur = np.mean(arr[i + evaDatapt + gapDataPt:i + 2 * evaDatapt + gapDataPt - 1])
         if cur > globalMax:
             globalMax = cur
-        if (round((cur - base) / base_std, 2) > multiplier):
-            print(str(round(cur - base, 2)), str(round((cur - base) / base_std, 2)), str(round(cur, 2)))
+        #if (round((cur - base) / base_std, 2) > multiplier):
+            #print(str(round(cur - base, 2)), str(round((cur - base) / base_std, 2)), str(round(cur, 2)))
         if cur > base + base_std * multiplier:
             isIndicatedLst.append(True)
         else:

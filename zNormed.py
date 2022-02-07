@@ -4,6 +4,10 @@ import os, csv, glob
 import matplotlib.pyplot as plt
 from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 
+from stdBounding import *
+from slidingWin import *
+from stepsFilter import *
+
 def zNormArr(arr):
     baseline = np.mean(arr[30:60])
     sensorStd = np.std(arr[:30]) 
@@ -41,29 +45,49 @@ def results_processing(folderPath, filename):
 
                 y1 = row[7:]
                 y1 = np.array([float(i) for i in y1])
-                if len(y1) >= 9: signalList.append(zNormArr(y1))
+                yNormed, PD1Scalar = zNormArr(y1)
+                signalList.append(yNormed)
             if idx == 12:
 
                 y2 = row[7:]
                 y2 = np.array([float(i) for i in y2])
-                if len(y2) >= 9: signalList.append(zNormArr(y2))
+                yNormed, PD2Scalar = zNormArr(y2)
+                signalList.append(yNormed)
             if idx == 13:
 
                 y3 = row[7:]
                 y3 = np.array([float(i) for i in y3])
-                if len(y3) >= 9: signalList.append(zNormArr(y3))
+                yNormed, PD3Scalar = zNormArr(y3)
+                signalList.append(yNormed)
             if idx == 14:
 
                 y4 = row[7:]
                 y4 = np.array([float(i) for i in y4])
-                if len(y4) >= 9: signalList.append(zNormArr(y4))
+                yNormed, PD4Scalar = zNormArr(y4)
+                signalList.append(yNormed)
             if idx == 15:
 
                 y5 = row[7:]
                 y5 = np.array([float(i) for i in y5])
-                if len(y5) >= 9: signalList.append(zNormArr(y5))
-
+                yNormed, PD5Scalar = zNormArr(y5)
+                signalList.append(yNormed)
+            
             idx += 1
+    avgScalar = (PD1Scalar + PD2Scalar + PD3Scalar + PD4Scalar + PD5Scalar) / 5
+    print(filename + "test scalar: " + str(round(avgScalar, 2)))
+    for i in range(len(signalList)):
+        signalList[i] = signalList[i] * avgScalar
+    
+    featList = np.zeros((5,4))
+    #print(np.shape(signalList))
+
+    if len(signalList) != 0:
+        for i in range(5):
+            _, diff, cp, stepWidth, avgRate= labelSteps(signalList[i])
+            print(_)
+            if diff == 0 and len(signalList[i]) >= 50:
+                diff = round(consecutiveSum(np.diff(signalList[i]), 50), 1)
+            featList[i] = [diff, cp, stepWidth, avgRate]
 
     plt.figure(num=None, figsize=(24, 6), dpi=40)
     ax = plt.subplot(111)
@@ -73,35 +97,37 @@ def results_processing(folderPath, filename):
     ax.plot(x, signalList[3], color = '#35ffff', linewidth=2, label='M1')
     ax.plot(x, signalList[4], color = '#ff35ff', linewidth=2, label='M2')
     plt.xlabel('Time (mins)', fontsize = 19, fontweight = 'bold')
-    plt.ylabel('Signal (mvs)', fontsize = 19, fontweight = 'bold')
+    plt.ylabel('Normalized Signal', fontsize = 19, fontweight = 'bold')
     plt.title('{}_{}'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult), fontsize = 20, fontweight = 'bold')
     box = ax.get_position()
     ax.set_position([box.x0*0.35, box.y0, box.width * 1.2, box.height])
     ax.grid(linestyle = '-.')
-    ax.legend(loc='lower right',  ncol=5)
-    """"
+    ax.legend(loc='upper right',  ncol=5)
+
     # Print diffs data in plot
     diffs_text = 'Diffs(mvs) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
     (featList[0][0], featList[1][0], featList[2][0], featList[3][0], featList[4][0])
     Tqs_text = 'Tqs(mins) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
     (featList[0][1], featList[1][1], featList[2][1], featList[3][1], featList[4][1])
-    plt.text(-2.5, 440, diffs_text)
-    plt.text(-2.5, 400, Tqs_text)
-    """
+    plt.text(-2.5, 280, diffs_text)
+    plt.text(-2.5, 240, Tqs_text)
+
 
     #ax.legend(loc='upper left')
-    #plt.axis([-5,30,0,1])
+    plt.axis([-5,30,-5,315])
     ax.xaxis.set_major_locator(MultipleLocator(2))
     ax.xaxis.set_major_formatter('{x:.0f}')
     ax.xaxis.set_minor_locator(MultipleLocator(1))
 
-    #ax.yaxis.set_major_locator(MultipleLocator(40))
-    #ax.yaxis.set_major_formatter('{x:.0f}')
-    #ax.yaxis.set_minor_locator(MultipleLocator(20))
+    ax.yaxis.set_major_locator(MultipleLocator(40))
+    ax.yaxis.set_major_formatter('{x:.0f}')
+    ax.yaxis.set_minor_locator(MultipleLocator(20))
 
 
     #plt.tight_layout()
     plt.savefig(os.path.join(folderPath, '{}-{}.png'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult)))
+
+
 
 
 if __name__=='__main__':

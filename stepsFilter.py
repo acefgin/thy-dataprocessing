@@ -3,13 +3,14 @@ import numpy as np
 import os, csv, glob
 
 def labelSteps(datas):
-	datas = np.array(datas)
+	if len(datas) >= 10:
+		datas = smooth(datas)
+		datas = datas[4:-5]
 	dataDiffs = np.diff(datas)
 
-	rate_threshold = 0.4
-	detect_threshold = 40
+	rate_threshold = 0.2
 	width_LB = 18
-	avgRate_LB = 1
+	avgRate_LB = 0.8
 
 	listOfSteps = []
 	inStep = False
@@ -20,7 +21,7 @@ def labelSteps(datas):
 			stepL = cnt
 			inStep = True
 			continue
-		if inStep and diff < rate_threshold:
+		if inStep and (diff < rate_threshold or (cnt == len(dataDiffs) - 1)):
 			stepR = cnt
 			inStep = False
 			LAMPStepFL = False
@@ -35,28 +36,32 @@ def labelSteps(datas):
 				#print(avgRate)
 				LAMPStepFL = avgRate >= avgRate_LB
 			step = [stepL, stepR, LAMPStepFL]
+			stepL = cnt + 1
 			listOfSteps.append(step)
 			continue
 	#print(listOfSteps)
 	stepDiff = 0
 	cp = 0
 	maxDiff = 0
+	maxIndex = 0
 	stepWidth = 0
 	for step in listOfSteps:
 		if step[-1]:
 			index = step[0] - 1
 			stepWidth += step[1] - step[0] + 1
-			# Capture time for highest diff as Cp
-			if dataDiffs[index] >= maxDiff:
-				maxDiff = dataDiffs[index]
-				cp = index * 10 / 60 - 5
 
 			# Accumulate signal increase of all Ture step as Step Diff
-			while index <= step[1] + 1:
+			while index < step[1] + 1:
 				stepDiff = stepDiff + dataDiffs[index]
+				# Capture time for highest diff as Cp
+				if dataDiffs[index] >= maxDiff:
+					maxDiff = dataDiffs[index]
+					maxIndex = index
 				index += 1
+			if len(datas) > 10: cp = (maxIndex - datas[maxIndex + 1] / dataDiffs[maxIndex]) * 10 / 60 - 5
 	avgRate = 0
 	if stepWidth != 0: avgRate = stepDiff/stepWidth
+	
 	return listOfSteps, round(stepDiff, 1), round(cp, 1), round(stepWidth, 1), round(avgRate, 1), 
 
 def results_processing(datas):

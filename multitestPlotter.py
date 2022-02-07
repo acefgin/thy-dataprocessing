@@ -97,7 +97,7 @@ def csvPlotter(folderPath, filename):
 	box = ax.get_position()
 	ax.set_position([box.x0*0.35, box.y0, box.width * 1.2, box.height])
 	ax.grid(linestyle = '-.')
-	ax.legend(loc='lower right',  ncol=5)
+	ax.legend(loc='upper right',  ncol=5)
 	# Print diffs data in plot
 	diffs_text = 'Diffs(mvs) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
 	(featList[0][0], featList[1][0], featList[2][0], featList[3][0], featList[4][0])
