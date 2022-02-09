@@ -85,8 +85,8 @@ def results_processing(folderPath, filename):
             idx += 1
     avgScalar = (PD1Scalar + PD2Scalar + PD3Scalar + PD4Scalar + PD5Scalar) / 5
     print("test scalar: " + str(round(avgScalar, 2)))
-    for i in range(len(signalList)):
-        signalList[i] = signalList[i] * avgScalar
+    for i in range(len(normedSgl)):
+        normedSgl[i] = normedSgl[i] * avgScalar
     
     featList = np.zeros((5,4))
     #print(np.shape(signalList))
