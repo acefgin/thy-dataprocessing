@@ -2,26 +2,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os, csv, glob
 
-def labelSteps(datas):
+def labelSteps(datas, rateTh = 0.3, width_LB = 15, avgRate_LB = 0.8):
 	if len(datas) >= 10:
 		datas = smooth(datas)
-		datas = datas[4:-5]
 	dataDiffs = np.diff(datas)
-
-	rate_threshold = 0.2
-	width_LB = 18
-	avgRate_LB = 0.8
 
 	listOfSteps = []
 	inStep = False
 	stepL = 0
 	stepR = 0
 	for cnt, diff in enumerate(dataDiffs):
-		if not inStep and diff >= rate_threshold:
+		if not inStep and diff >= rateTh:
 			stepL = cnt
 			inStep = True
 			continue
-		if inStep and (diff < rate_threshold or (cnt == len(dataDiffs) - 1)):
+		if inStep and (diff < rateTh or (cnt == len(dataDiffs) - 1)):
 			stepR = cnt
 			inStep = False
 			LAMPStepFL = False

@@ -75,7 +75,8 @@ def smooth(x,window_len=10,window='hanning'):
 		w = eval('np.'+window+'(window_len)')
 
 	y = np.convolve(w/w.sum(),s,mode='valid')
-	return np.round(y, decimals = 3)
+	y = np.round(y, decimals = 3)
+	return y[window_len/2 - 1:- (window_len/2)]
 
 
 def consecutiveSum(arr, window_len):

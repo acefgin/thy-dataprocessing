@@ -7,18 +7,7 @@ from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
 from stdBounding import *
 from slidingWin import *
 from stepsFilter import *
-
-def wellFillCk(arr, th):
-    if len(arr) >= 30:
-        data = arr[:30]
-        sensorStd = np.std(data) 
-        dataDiff = np.diff(data)
-    
-
-def zNormArr(arr):
-    baseline = np.mean(arr[30:60])
-    sensorStd = np.std(arr[:30]) 
-    return (arr - baseline) / sensorStd, sensorStd
+from zNormed import *
 
 def results_processing(folderPath, filename):
 
@@ -30,12 +19,15 @@ def results_processing(folderPath, filename):
     plt.rc('font', **font)
 
     x = []
-    signalList = []
+    normedSgl = []
+    smoothedSgl = []
     y1 = []
     y2 = []
     y3 = []
     y4 = []
     y5 = []
+    idInfo = []
+    ChResult = []
     OverallResult = ""
 
     with open(os.path.join(folderPath, filename),'r') as csvfile:
@@ -44,6 +36,7 @@ def results_processing(folderPath, filename):
 
         for row in plots:
             if idx == 1:
+                idInfo.append([row[0], row[2]])
                 OverallResult = row[4]
             if idx == 8:
                 x = row[7:]
@@ -51,33 +44,43 @@ def results_processing(folderPath, filename):
             if idx == 11:
 
                 y1 = row[7:]
+                ChResult.append(row[5])
                 y1 = np.array([float(i) for i in y1 if i != ''])
+                if len(y1) >= 9: smoothedSgl.append(smooth(y1))
                 yNormed, PD1Scalar = zNormArr(y1)
-                signalList.append(yNormed)
+                normedSgl.append(yNormed)
             if idx == 12:
 
                 y2 = row[7:]
+                ChResult.append(row[5])
                 y2 = np.array([float(i) for i in y2 if i != ''])
+                if len(y2) >= 9: smoothedSgl.append(smooth(y2))
                 yNormed, PD2Scalar = zNormArr(y2)
-                signalList.append(yNormed)
+                normedSgl.append(yNormed)
             if idx == 13:
 
                 y3 = row[7:]
+                ChResult.append(row[5])
                 y3 = np.array([float(i) for i in y3 if i != ''])
+                if len(y3) >= 9: smoothedSgl.append(smooth(y3))
                 yNormed, PD3Scalar = zNormArr(y3)
-                signalList.append(yNormed)
+                normedSgl.append(yNormed)
             if idx == 14:
 
                 y4 = row[7:]
+                ChResult.append(row[5])
                 y4 = np.array([float(i) for i in y4 if i != ''])
+                if len(y4) >= 9: smoothedSgl.append(smooth(y4))
                 yNormed, PD4Scalar = zNormArr(y4)
-                signalList.append(yNormed)
+                normedSgl.append(yNormed)
             if idx == 15:
 
                 y5 = row[7:]
+                ChResult.append(row[5])
                 y5 = np.array([float(i) for i in y5 if i != ''])
+                if len(y5) >= 9: smoothedSgl.append(smooth(y5))
                 yNormed, PD5Scalar = zNormArr(y5)
-                signalList.append(yNormed)
+                normedSgl.append(yNormed)
             
             idx += 1
     avgScalar = (PD1Scalar + PD2Scalar + PD3Scalar + PD4Scalar + PD5Scalar) / 5
@@ -91,51 +94,10 @@ def results_processing(folderPath, filename):
     if len(signalList) != 0:
         for i in range(5):
             _, diff, cp, stepWidth, avgRate= labelSteps(signalList[i])
-            print(_)
             if diff == 0 and len(signalList[i]) >= 50:
                 diff = round(consecutiveSum(np.diff(signalList[i]), 50), 1)
             featList[i] = [diff, cp, stepWidth, avgRate]
-
-    plt.figure(num=None, figsize=(24, 6), dpi=40)
-    ax = plt.subplot(111)
-    ax.plot(x, signalList[0], color = 'r', linewidth=2, label='PC')
-    ax.plot(x, signalList[1], color = '#35ff35', linewidth=2, label='N1')
-    ax.plot(x, signalList[2], color = '#3535ff', linewidth=2, label='N2')
-    ax.plot(x, signalList[3], color = '#35ffff', linewidth=2, label='M1')
-    ax.plot(x, signalList[4], color = '#ff35ff', linewidth=2, label='M2')
-    plt.xlabel('Time (mins)', fontsize = 19, fontweight = 'bold')
-    plt.ylabel('Normalized Signal', fontsize = 19, fontweight = 'bold')
-    plt.title('{}_{}'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult), fontsize = 20, fontweight = 'bold')
-    box = ax.get_position()
-    ax.set_position([box.x0*0.35, box.y0, box.width * 1.2, box.height])
-    ax.grid(linestyle = '-.')
-    ax.legend(loc='upper right',  ncol=5)
-
-    # Print diffs data in plot
-    diffs_text = 'Diffs(mvs) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
-    (featList[0][0], featList[1][0], featList[2][0], featList[3][0], featList[4][0])
-    Tqs_text = 'Tqs(mins) = PC:{}, N1:{}, N2:{}, M1:{}, M2:{}'.format\
-    (featList[0][1], featList[1][1], featList[2][1], featList[3][1], featList[4][1])
-    plt.text(-2.5, 280, diffs_text)
-    plt.text(-2.5, 240, Tqs_text)
-
-
-    #ax.legend(loc='upper left')
-    plt.axis([-5,30,-5,315])
-    ax.xaxis.set_major_locator(MultipleLocator(2))
-    ax.xaxis.set_major_formatter('{x:.0f}')
-    ax.xaxis.set_minor_locator(MultipleLocator(1))
-
-    ax.yaxis.set_major_locator(MultipleLocator(40))
-    ax.yaxis.set_major_formatter('{x:.0f}')
-    ax.yaxis.set_minor_locator(MultipleLocator(20))
-
-
-    #plt.tight_layout()
-    plt.savefig(os.path.join(folderPath, '{}-{}.png'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult)))
-
-
-
+    return idInfo, OverallResult, featList
 
 if __name__=='__main__':
     csvfoler = os.path.join(os.path.dirname(__file__), 'test_csv')
@@ -143,3 +105,22 @@ if __name__=='__main__':
     for filename in filenames:
         print(filename)
         results_processing(csvfoler, filename)
+    
+    cwd = os.path.dirname(__file__)
+
+    reportcsvFile = "dataWizard_output"
+	header = ["SampleID", "Barcode", "Result", "Well", "VolDiff", "Tq", "StepWidth", "AvgRate"]
+	with open(reportcsvFile,'w', newline = '') as reportCsv:
+		writer = csv.writer(reportCsv)
+		writer.writerow(header)
+
+		for filename in filenames:
+
+			idInfo, overallRlt, featList = results_processing(csvfoler, filename)
+			for i in range(5):
+				
+				data2Write = [idInfo[0][0], idInfo[0][1], overallRlt, str(i+1), str(featList[i][0]), \
+					str(featList[i][1]), str(featList[i][2]), str(featList[i][3])]
+				writer.writerow(data2Write)
+
+		writer.writerow('\n')
