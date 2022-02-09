@@ -202,7 +202,7 @@ def fileSplitter(multitestPath, slgtestPath, filename, devicePrefix, savePath):
             newDateTime = date_time.strftime("%Y%m%d%H%M%S")
             '''
 
-            newFile = os.path.join(savePath, '{}_{}-{}.csv'.format(devicePrefix, dateTimes[testNum][1], dateTimes[testNum][0]))
+            newFile = os.path.join(savePath, '{}_{}-{}-{}.csv'.format(devicePrefix, dateTimes[testNum][1], dateTimes[testNum][2],dateTimes[testNum][0]))
             if os.path.isfile(newFile):
             	continue
             with open(newFile,'w', newline = '') as slgTest:
