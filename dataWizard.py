@@ -1,4 +1,6 @@
 from msilib import _Unspecified
+from re import S
+import re
 import numpy as np
 import os, csv, glob
 
@@ -11,7 +13,7 @@ from slidingWin import *
 from stepsFilter import *
 from zNormed import *
 
-def results_processing(folderPath, filename):
+def results_processing(folderPath, filename, resultAnalysisWithNormedData = False):
 
     plt.style.use('seaborn-bright')
 
@@ -91,16 +93,27 @@ def results_processing(folderPath, filename):
     for i in range(len(normedSgl)):
         normedSgl[i] = normedSgl[i] * avgScalar
     
-    featList = np.zeros((5,4))
-    #print(np.shape(signalList))
+    rawDatafeatList = np.zeros((5,4))
+    normedDatafeatList = np.zeros((5,4))
 
     if len(normedSgl) != 0:
         for i in range(5):
             _, diff, cp, stepWidth, avgRate= labelSteps(normedSgl[i])
-            ChResult.append(diff >= thList [i])
+            if resultAnalysisWithNormedData:
+                ChResult.append(diff >= thList [i])
             if diff == 0 and len(normedSgl[i]) >= 50:
                 diff = round(consecutiveSum(np.diff(normedSgl[i]), 50), 1)
-            featList[i] = [diff, cp, stepWidth, avgRate]
+            normedDatafeatList[i] = [diff, cp, stepWidth, avgRate]
+    
+    if len(smoothedSgl) != 0:
+        for i in range(5):
+            _, diff, cp, stepWidth, avgRate= labelSteps(smoothedSgl[i])
+            if not resultAnalysisWithNormedData:
+                ChResult.append(diff >= thList [i])
+            if diff == 0 and len(smoothedSgl[i]) >= 50:
+                diff = round(consecutiveSum(np.diff(smoothedSgl[i]), 50), 1)
+            rawDatafeatList[i] = [diff, cp, stepWidth, avgRate]    
+    
     if ChResult[0] and (ChResult[1] or ChResult[2] or ChResult[3] or ChResult[4]):
         OverallResult = "Positive"
     elif ChResult[0] and ((ChResult[1] == 0) and (ChResult[2] == 0) and (ChResult[3] == 0) and (ChResult[4] == 0)):
@@ -108,7 +121,7 @@ def results_processing(folderPath, filename):
     elif ChResult[0] ==0:
         OverallResult = "Invalid"
 
-    return idInfo, ChResult, OverallResult, featList, sScore, thList
+    return idInfo, ChResult, OverallResult, rawDatafeatList, normedDatafeatList, sScore, thList
 
 
 def testIDLkUp(filename):
@@ -132,9 +145,17 @@ if __name__=='__main__':
     testIDLkUpFile = "testID_lookup.csv"
     testIDTb = testIDLkUp(testIDLkUpFile)
     reportcsvFile = "dataWizard_output.csv"
+    resultAnalysisWithNormedData = False
 	
     with open(reportcsvFile,'w', newline = '') as reportCsv:
         writer = csv.writer(reportCsv)
+        header = ["TestID#", "KitID", "InputRt", "SampleType", "Concentration", "OutputRt", \
+        "ChRt-1", "VolDiff-1", "Tq-1", "StepWidth-1", "AvgRate-1", "SentivityScore-1", "Threshold-1", \
+        "ChRt-2", "VolDiff-2", "Tq-2", "StepWidth-2", "AvgRate-2", "SentivityScore-2", "Threshold-2", \
+        "ChRt-3", "VolDiff-3", "Tq-3", "StepWidth-3", "AvgRate-3", "SentivityScore-3", "Threshold-3", \
+        "ChRt-4", "VolDiff-4", "Tq-4", "StepWidth-4", "AvgRate-4", "SentivityScore-4", "Threshold-4", \
+        "ChRt-5", "VolDiff-5", "Tq-5", "StepWidth-5", "AvgRate-5", "SentivityScore-5", "Threshold-5",]
+        writer.writerow(header)
         idx = 1
         TP = 0
         TN = 0
@@ -148,9 +169,32 @@ if __name__=='__main__':
             print(str(idx) + ":" + testID)
             idx += 1
             testInfo = testIDTb[testID]
+            inputInfo = testInfo[1]
+            if "-" in inputInfo:
+                inputInfoList = inputInfo.split(" - ")
+            else:
+                inputInfoList = [inputInfo, ""]
+            sampleInfoString = ""
+            sampleInfo = ["", ""]
+            
+            sampleInfoString = inputInfoList[1]
+            print(any(map(str.isdigit,sampleInfoString)))
+            if any(map(str.isdigit, sampleInfoString)):
+                if sampleInfoString[-1] == "K":
+                    if "." in sampleInfoString:
+                        pattern = re.compile("([a-zA-Z]+)(\d+\.\d+[a-zA-Z])")
+                    else:
+                        pattern = re.compile("([a-zA-Z]+)(\d+[a-zA-Z])")
+                else:
+                    if "." in sampleInfoString:
+                        pattern = re.compile("([a-zA-Z]+)(\d+\.\d+)")
+                    else:
+                        pattern = re.compile("([a-zA-Z]+)(\d+)")
+                sampleInfo = pattern.match(sampleInfoString).groups()
+            else:
+                sampleInfo = [sampleInfoString, ""]
 
-
-            idInfo, chResult, overallRlt, featList, sScore, thList = results_processing(csvfoler, filename)
+            idInfo, chResult, overallRlt, rawDatafeatList, normedDatafeatList, sScore, thList = results_processing(csvfoler, filename, resultAnalysisWithNormedData)
 
             if overallRlt == "Positive":
                 if "Positive" in testInfo[1]:
@@ -171,17 +215,22 @@ if __name__=='__main__':
                 if not ("Positive" in testInfo[1] or "Negative" in testInfo[1]):
                     unspecified += 1
 
-            testInfo = ["TestID#", testID, "KitID", testInfo[0], "InputRt", testInfo[1], "OutputRt", overallRlt]
-            writer.writerow(testInfo)
-            header = ["Well", "ChRt", "VolDiff", "Tq", "StepWidth", "AvgRate", "SentivityScore", "Threshold"]
-            writer.writerow(header)
+            testInfo = [testID, testInfo[0], inputInfoList[0], sampleInfo[0], sampleInfo[1], overallRlt]
+            #writer.writerow(testInfo)
+            #header = ["Well", "ChRt", "VolDiff", "Tq", "StepWidth", "AvgRate", "SentivityScore", "Threshold"]
+            #writer.writerow(header)
             for i in range(5):
                 
-                data2Write = [str(i + 1), chResult[i], str(featList[i][0]), str(featList[i][1]), str(featList[i][2]), \
-					str(featList[i][3]), str(round(sScore[i], 1)), str(thList[i])]
-                writer.writerow(data2Write)
+                data2Write = [chResult[i], str(rawDatafeatList[i][0]), str(normedDatafeatList[i][1]), str(rawDatafeatList[i][2]), \
+					str(rawDatafeatList[i][3]), str(round(sScore[i], 1)), str(thList[i])]
+                testInfo += data2Write
+            writer.writerow(testInfo)
 
         writer.writerow('\n')
+        if resultAnalysisWithNormedData:
+            print("Result analysis with normalized data")
+        else:
+            print("Result analysis with raw data")
         msg2print = "Specificed test num: {}, invalid test num: {}".format(idx - unspecified - 1, invalidNum)
         print(msg2print)
         msg2print = "TN: {} , FP: {}".format(TN, FP)
