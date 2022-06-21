@@ -135,7 +135,7 @@ def testIDLkUp(filename):
                 idx += 1
                 continue
             #print(row)
-            LkUp[row[0]] = [row[1], row[2]]
+            LkUp[row[0]] = [row[1], row[2], row[3], row[4], row[5]]
     return LkUp
 
 
@@ -149,7 +149,7 @@ if __name__=='__main__':
 	
     with open(reportcsvFile,'w', newline = '') as reportCsv:
         writer = csv.writer(reportCsv)
-        header = ["TestID#", "KitID", "InputRt", "SampleType", "Concentration", "OutputRt", \
+        header = ["TestID#", "KitID", "InputGp", "Input[C]", "OutputRt", "Exp. Result", \
         "ChRt-1", "VolDiff-1", "Tq-1", "StepWidth-1", "AvgRate-1", "SentivityScore-1", "Threshold-1", \
         "ChRt-2", "VolDiff-2", "Tq-2", "StepWidth-2", "AvgRate-2", "SentivityScore-2", "Threshold-2", \
         "ChRt-3", "VolDiff-3", "Tq-3", "StepWidth-3", "AvgRate-3", "SentivityScore-3", "Threshold-3", \
@@ -169,44 +169,22 @@ if __name__=='__main__':
             print(str(idx) + ":" + testID)
             idx += 1
             testInfo = testIDTb[testID]
-            inputInfo = testInfo[1]
-            if "-" in inputInfo:
-                inputInfoList = inputInfo.split(" - ")
-            else:
-                inputInfoList = [inputInfo, ""]
-            sampleInfoString = ""
-            sampleInfo = ["", ""]
-            
-            sampleInfoString = inputInfoList[1]
-            print(any(map(str.isdigit,sampleInfoString)))
-            if any(map(str.isdigit, sampleInfoString)):
-                if sampleInfoString[-1] == "K":
-                    if "." in sampleInfoString:
-                        pattern = re.compile("([a-zA-Z]+)(\d+\.\d+[a-zA-Z])")
-                    else:
-                        pattern = re.compile("([a-zA-Z]+)(\d+[a-zA-Z])")
-                else:
-                    if "." in sampleInfoString:
-                        pattern = re.compile("([a-zA-Z]+)(\d+\.\d+)")
-                    else:
-                        pattern = re.compile("([a-zA-Z]+)(\d+)")
-                sampleInfo = pattern.match(sampleInfoString).groups()
-            else:
-                sampleInfo = [sampleInfoString, ""]
+            inputGInfo = testInfo[1]
+            inputCInfo = testInfo[2]
 
             idInfo, chResult, overallRlt, rawDatafeatList, normedDatafeatList, sScore, thList = results_processing(csvfoler, filename, resultAnalysisWithNormedData)
 
             if overallRlt == "Positive":
-                if "Positive" in testInfo[1]:
+                if "Positive" in inputGInfo:
                     TP += 1
-                elif "Negative" in testInfo[1]:
+                elif "Negative" in inputGInfo:
                     FP += 1
                 else:
                     unspecified += 1
             elif overallRlt == "Negative":
-                if "Positive" in testInfo[1]:
+                if "Positive" in inputGInfo:
                     FN += 1
-                elif "Negative" in testInfo[1]:
+                elif "Negative" in inputGInfo:
                     TN += 1
                 else:
                     unspecified += 1
@@ -215,10 +193,7 @@ if __name__=='__main__':
                 if not ("Positive" in testInfo[1] or "Negative" in testInfo[1]):
                     unspecified += 1
 
-            testInfo = [testID, testInfo[0], inputInfoList[0], sampleInfo[0], sampleInfo[1], overallRlt]
-            #writer.writerow(testInfo)
-            #header = ["Well", "ChRt", "VolDiff", "Tq", "StepWidth", "AvgRate", "SentivityScore", "Threshold"]
-            #writer.writerow(header)
+            testInfo = [testID, testInfo[0], inputGInfo, inputCInfo, overallRlt, testInfo[-1]]
             for i in range(5):
                 
                 data2Write = [chResult[i], str(rawDatafeatList[i][0]), str(normedDatafeatList[i][1]), str(rawDatafeatList[i][2]), \

@@ -8,16 +8,11 @@ from stdBounding import *
 from slidingWin import *
 from stepsFilter import *
 
-def wellFillCk(arr, th):
-    if len(arr) >= 30:
-        data = arr[:30]
-        sensorStd = np.std(data) 
-        dataDiff = np.diff(data)
-    
-
 def zNormArr(arr):
-    baseline = np.mean(arr[30:60])
-    sensorStd = np.std(arr[:30]) 
+    baseline = round(np.mean(arr[30:60]), 2)
+    sensorStd = round(np.std(arr[:30]) , 2)
+    if sensorStd < 0.1:
+        sensorStd = 0.1
     return (arr - baseline) / sensorStd, sensorStd
 
 def results_processing(folderPath, filename):

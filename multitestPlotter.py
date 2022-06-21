@@ -10,6 +10,7 @@ from stepsFilter import *
 
 def csvPlotter(folderPath, filename):
 
+	print(os.path.splitext(os.path.basename(filename))[0])
 	plt.style.use('seaborn-bright')
 
 	plt.rc('axes', linewidth=2)
@@ -155,7 +156,7 @@ def csvPlotter(folderPath, filename):
 
 	#plt.tight_layout()
 	plt.savefig(os.path.join(folderPath, '{}_{}.png'.format(os.path.splitext(os.path.split(filename)[1])[0], OverallResult)))
-	 
+
 	return idInfo, OverallResult, featList
 
 def fileSplitter(multitestPath, slgtestPath, filename, devicePrefix, savePath):
@@ -238,7 +239,7 @@ if __name__=='__main__':
 	fileSplitter(multitestPath, slgtestPath, filename, devicePrefix, savePath)
 
 	filenames = sorted(glob.glob(os.path.join(savePath, '*.csv')))
-	
+
 	reportcsvFile = os.path.join(savePath, '{}_report.csv'.format(resultFolder))
 	header = ["SampleID", "Barcode", "Result", "Well", "VolDiff", "Tq", "StepWidth", "AvgRate"]
 	with open(reportcsvFile,'w', newline = '') as reportCsv:
@@ -249,7 +250,7 @@ if __name__=='__main__':
 
 			idInfo, overallRlt, featList = csvPlotter(savePath, filename)
 			for i in range(5):
-				
+
 				data2Write = [idInfo[0][0], idInfo[0][1], overallRlt, str(i+1), str(featList[i][0]), \
 					str(featList[i][1]), str(featList[i][2]), str(featList[i][3])]
 				writer.writerow(data2Write)
