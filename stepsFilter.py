@@ -2,16 +2,20 @@
 import numpy as np
 import os, csv, glob
 
-def labelSteps(datas, rateTh = 0.3, width_LB = 15, avgRate_LB = 0.8):
-	if len(datas) >= 10:
-		datas = smooth(datas)
+def labelSteps(datas, startPt = 30, rateTh = 0.3, width_LB = 15, avgRate_LB = 0.8):
+	
+	#if len(datas) >= 10:
+	#	datas = smooth(datas)
 	dataDiffs = np.diff(datas)
 
 	listOfSteps = []
 	inStep = False
 	stepL = 0
 	stepR = 0
+	
 	for cnt, diff in enumerate(dataDiffs):
+		if cnt < startPt:
+			continue
 		if not inStep and diff >= rateTh:
 			stepL = cnt
 			inStep = True

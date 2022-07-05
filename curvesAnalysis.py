@@ -13,17 +13,9 @@ from slidingWin import *
 from stepsFilter import *
 from zNormed import *
 
-def results_processing(folderPath, filename, resultAnalysisWithNormedData = False):
-
-    plt.style.use('seaborn-bright')
-
-    plt.rc('axes', linewidth=2)
-    font = {'weight' : 'bold',
-    'size'   : 21}
-    plt.rc('font', **font)
+def results_processing(folderPath, filename):
 
     x = []
-    normedSgl = []
     smoothedSgl = []
     y1 = []
     y2 = []
@@ -51,65 +43,44 @@ def results_processing(folderPath, filename, resultAnalysisWithNormedData = Fals
                 
                 y1 = np.array([float(i) for i in y1 if i != ''])
                 if len(y1) >= 9: smoothedSgl.append(smooth(y1))
-                yNormed, PD1Scalar = zNormArr(y1)
-                normedSgl.append(yNormed)
+
             if idx == 12:
 
                 y2 = row[7:]
                 
                 y2 = np.array([float(i) for i in y2 if i != ''])
                 if len(y2) >= 9: smoothedSgl.append(smooth(y2))
-                yNormed, PD2Scalar = zNormArr(y2)
-                normedSgl.append(yNormed)
+
             if idx == 13:
 
                 y3 = row[7:]
                 
                 y3 = np.array([float(i) for i in y3 if i != ''])
                 if len(y3) >= 9: smoothedSgl.append(smooth(y3))
-                yNormed, PD3Scalar = zNormArr(y3)
-                normedSgl.append(yNormed)
+
             if idx == 14:
 
                 y4 = row[7:]
                 
                 y4 = np.array([float(i) for i in y4 if i != ''])
                 if len(y4) >= 9: smoothedSgl.append(smooth(y4))
-                yNormed, PD4Scalar = zNormArr(y4)
-                normedSgl.append(yNormed)
+
             if idx == 15:
 
                 y5 = row[7:]
                 
                 y5 = np.array([float(i) for i in y5 if i != ''])
                 if len(y5) >= 9: smoothedSgl.append(smooth(y5))
-                yNormed, PD5Scalar = zNormArr(y5)
-                normedSgl.append(yNormed)
-            
+
             idx += 1
-    avgScalar = (PD1Scalar + PD2Scalar + PD3Scalar + PD4Scalar + PD5Scalar) / 5
-    sScore = [PD1Scalar, PD2Scalar, PD3Scalar, PD4Scalar, PD5Scalar]
-    print("test scalar: " + str(round(avgScalar, 2)))
-    for i in range(len(normedSgl)):
-        normedSgl[i] = normedSgl[i] * avgScalar
     
     rawDatafeatList = np.zeros((5,4))
-    normedDatafeatList = np.zeros((5,4))
-
-    if len(normedSgl) != 0:
-        for i in range(5):
-            _, diff, cp, stepWidth, avgRate= labelSteps(normedSgl[i])
-            if resultAnalysisWithNormedData:
-                ChResult.append(diff >= thList [i])
-            if diff == 0 and len(normedSgl[i]) >= 50:
-                diff = round(consecutiveSum(np.diff(normedSgl[i]), 50), 1)
-            normedDatafeatList[i] = [diff, cp, stepWidth, avgRate]
     
     if len(smoothedSgl) != 0:
         for i in range(5):
-            _, diff, cp, stepWidth, avgRate= labelSteps(smoothedSgl[i])
-            if not resultAnalysisWithNormedData:
-                ChResult.append(diff >= thList [i])
+            _, diff, cp, stepWidth, avgRate= labelSteps(smoothedSgl[i], startPt = 75, rateTh = 0.3, width_LB = 12, avgRate_LB = 0.84)
+
+            ChResult.append(diff >= thList [i])
             if diff == 0 and len(smoothedSgl[i]) >= 50:
                 diff = round(consecutiveSum(np.diff(smoothedSgl[i]), 50), 1)
             rawDatafeatList[i] = [diff, cp, stepWidth, avgRate]    
@@ -121,7 +92,7 @@ def results_processing(folderPath, filename, resultAnalysisWithNormedData = Fals
     elif ChResult[0] ==0:
         OverallResult = "Invalid"
 
-    return idInfo, ChResult, OverallResult, rawDatafeatList, normedDatafeatList, sScore, thList
+    return idInfo, ChResult, OverallResult, rawDatafeatList, thList, [75, 0.3, 12, 0.84]
 
 
 def testIDLkUp(filename):
@@ -144,17 +115,16 @@ if __name__=='__main__':
     filenames = sorted(glob.glob(os.path.join(csvfoler, '*.csv')))
     testIDLkUpFile = "testID_lookup.csv"
     testIDTb = testIDLkUp(testIDLkUpFile)
-    reportcsvFile = "dataWizard_output.csv"
-    resultAnalysisWithNormedData = False
+    reportcsvFile = "curveAnalysis_output.csv"
 	
     with open(reportcsvFile,'w', newline = '') as reportCsv:
         writer = csv.writer(reportCsv)
         header = ["TestID#", "KitID", "InputGp", "Input[C]", "OutputRt", "Exp. Result", \
-        "ChRt-1", "VolDiff-1", "Tq-1", "StepWidth-1", "AvgRate-1", "SentivityScore-1", "Threshold-1", \
-        "ChRt-2", "VolDiff-2", "Tq-2", "StepWidth-2", "AvgRate-2", "SentivityScore-2", "Threshold-2", \
-        "ChRt-3", "VolDiff-3", "Tq-3", "StepWidth-3", "AvgRate-3", "SentivityScore-3", "Threshold-3", \
-        "ChRt-4", "VolDiff-4", "Tq-4", "StepWidth-4", "AvgRate-4", "SentivityScore-4", "Threshold-4", \
-        "ChRt-5", "VolDiff-5", "Tq-5", "StepWidth-5", "AvgRate-5", "SentivityScore-5", "Threshold-5",]
+        "ChRt-1", "VolDiff-1", "StepWidth-1", "AvgRate-1", "Threshold-1", \
+        "ChRt-2", "VolDiff-2", "StepWidth-2", "AvgRate-2", "Threshold-2", \
+        "ChRt-3", "VolDiff-3", "StepWidth-3", "AvgRate-3", "Threshold-3", \
+        "ChRt-4", "VolDiff-4", "StepWidth-4", "AvgRate-4", "Threshold-4", \
+        "ChRt-5", "VolDiff-5", "StepWidth-5", "AvgRate-5", "Threshold-5",]
         writer.writerow(header)
         idx = 1
         TP = 0
@@ -172,7 +142,7 @@ if __name__=='__main__':
             inputGInfo = testInfo[1]
             inputCInfo = testInfo[2]
 
-            idInfo, chResult, overallRlt, rawDatafeatList, normedDatafeatList, sScore, thList = results_processing(csvfoler, filename, resultAnalysisWithNormedData)
+            idInfo, chResult, overallRlt, rawDatafeatList, thList, [startPt, rateTh, width_LB, avgRate_LB] = results_processing(csvfoler, filename)
 
             if overallRlt == "Positive":
                 if "Positive" in inputGInfo:
@@ -196,16 +166,15 @@ if __name__=='__main__':
             testInfo = [testID, testInfo[0], inputGInfo, inputCInfo, overallRlt, testInfo[-1]]
             for i in range(5):
                 
-                data2Write = [chResult[i], str(rawDatafeatList[i][0]), str(normedDatafeatList[i][1]), str(rawDatafeatList[i][2]), \
-					str(rawDatafeatList[i][3]), str(round(sScore[i], 1)), str(thList[i])]
+                data2Write = [chResult[i], str(rawDatafeatList[i][0]), str(rawDatafeatList[i][2]), \
+					str(rawDatafeatList[i][3]), str(thList[i])]
                 testInfo += data2Write
             writer.writerow(testInfo)
 
         writer.writerow('\n')
-        if resultAnalysisWithNormedData:
-            print("Result analysis with normalized data")
-        else:
-            print("Result analysis with raw data")
+
+        print("Result analysis with raw data")
+        print("ADF parameter-startPt: {}, rateTh: {}, widthLB: {}, avgRateLB: {}".format(startPt, rateTh, width_LB, avgRate_LB))
         msg2print = "Specificed test num: {}, invalid test num: {}".format(idx - unspecified - 1, invalidNum)
         print(msg2print)
         msg2print = "TN: {} , FP: {}".format(TN, FP)
